@@ -22,7 +22,7 @@ func newServer(store store.Store, port int, cancel context.CancelFunc) *server {
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
+		Handler: logRequests(mux),
 	}
 
 	s := &server{
@@ -40,6 +40,13 @@ func newServer(store store.Store, port int, cancel context.CancelFunc) *server {
 	mux.HandleFunc("POST /admin/shutdown", s.handlerShutdown)
 
 	return s
+}
+
+func logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Printf("Served request: %s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *server) start() error {

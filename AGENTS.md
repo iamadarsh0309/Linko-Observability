@@ -25,6 +25,8 @@
   `server.go:newServer`; add new handlers there.
 - Uses Go 1.22+ `ServeMux` method patterns. `GET /` is a catch-all for unmatched GET
   paths, and `GET /{shortCode}` handles redirects.
+- `logRequests` wraps the mux in `server.go` and logs
+  `Served request: METHOD PATH` for every request.
 - The store is file-per-short-code under `-data`. `Store.Lookup` uppercases codes;
   `Store.List` returns at most 10 entries.
 - All `/api/*` routes require Basic auth. Seeded users: `frodo` / `ofTheNineFingers`
