@@ -14,8 +14,9 @@
 - Build: `go build -o linko .`
 - Run: `go run .` (or `./linko`); defaults to port `8899` and data dir `./data`.
   Flags: `-port`, `-data`.
-- Verify: `go vet ./...` and `go fmt ./...`; `go test ./...` reports no test files
-  (this repo has no tests, CI, or lint config).
+- Verify: `go vet ./...`, `go fmt ./...`, `go test ./...` (no test files), and
+  `golangci-lint run` (config in `.golangci.yml`; only `forbidigo` is enabled).
+  Use a golangci-lint binary built with Go >= 1.27.
 - `index.html` is embedded with `go:embed`; rebuild/restart after editing it.
 
 ## Layout and runtime quirks
@@ -33,8 +34,9 @@
   `ENV=production`).
 - Shorten and redirect requests perform a live outbound GET, so manual testing needs
   network access and a reachable destination URL.
-- Logging uses the stdlib `log` package (stderr). Keep existing log statements unless
-  the task is specifically about changing telemetry.
+- Logging uses the stdlib `log` package (stderr); `fmt.Print*` is banned by
+  `forbidigo` ("Use logger instead."). Keep existing log statements unless the task
+  is specifically about changing telemetry.
 - `data/`, the `linko` binary, and `*.log` (e.g. `linko.out.log`) are gitignored.
   Never commit runtime data or logs.
 
