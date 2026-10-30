@@ -34,9 +34,12 @@
   `ENV=production`).
 - Shorten and redirect requests perform a live outbound GET, so manual testing needs
   network access and a reachable destination URL.
-- Logging uses the stdlib `log` package (stderr); `fmt.Print*` is banned by
-  `forbidigo` ("Use logger instead."). Keep existing log statements unless the task
-  is specifically about changing telemetry.
+- Root-package logging goes through the global `logger` in `main.go`
+  (`log.New(os.Stderr, "DEBUG: ", log.LstdFlags)`). Use `logger.*` in `main.go`,
+  `server.go`, `handlers.go`, and `auth.go`; don't call `log.*` directly there.
+  `internal/store` still uses the stdlib `log` package directly.
+- `fmt.Print*` is banned by `forbidigo` ("Use logger instead."). Keep existing log
+  statements unless the task is specifically about changing telemetry.
 - `data/`, the `linko` binary, and `*.log` (e.g. `linko.out.log`) are gitignored.
   Never commit runtime data or logs.
 
