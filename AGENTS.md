@@ -14,9 +14,11 @@
 - Build: `go build -o linko .`
 - Run: `go run .` (or `./linko`); defaults to port `8899` and data dir `./data`.
   Flags: `-port`, `-data`.
-- Verify: `go vet ./...`, `go fmt ./...`, `go test ./...` (no test files), and
+- Verify: `go vet ./...`, `go fmt ./...`, `go test ./...` (no test files yet), and
   `golangci-lint run` (config in `.golangci.yml`; only `forbidigo` is enabled).
   Use a golangci-lint binary built with Go >= 1.27.
+- CI: `.github/workflows/ci.yml` runs formatting, vet, tests, build, and lint on
+  pushes to `main` and pull requests.
 - `index.html` is embedded with `go:embed`; rebuild/restart after editing it.
 
 ## Layout and runtime quirks
