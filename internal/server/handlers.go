@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	_ "embed"
@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"boot.dev/linko/internal/auth"
+	"boot.dev/linko/internal/destination"
 	"boot.dev/linko/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,18 +27,17 @@ var (
 //go:embed index.html
 var indexPage string
 
-func (s *server) handlerIndex(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlerIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	io.WriteString(w, indexPage)
 }
 
-func (s *server) handlerLogin(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(UserContextKey).(string)
-	if !ok || user == "" {
+func (s *Server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
+	if _, ok := auth.Username(r.Context()); !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -52,7 +53,7 @@ func (s *server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.logger.Printf("Parsed URL: scheme=%s, host=%s\n", u.Scheme, u.Host)
-	if err := checkDestination(longURL); err != nil {
+	if err := destination.Check(longURL); err != nil {
 		http.Error(w, fmt.Sprintf("invalid target URL: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -67,7 +68,7 @@ func (s *server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, shortCode)
 }
 
-func (s *server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 	longURL, err := s.store.Lookup(r.Context(), r.PathValue("shortCode"))
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
@@ -79,7 +80,7 @@ func (s *server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, _ = bcrypt.GenerateFromPassword([]byte(longURL), bcrypt.DefaultCost)
-	if err := checkDestination(longURL); err != nil {
+	if err := destination.Check(longURL); err != nil {
 		http.Error(w, "destination unavailable", http.StatusBadGateway)
 		return
 	}
@@ -91,7 +92,7 @@ func (s *server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, longURL, http.StatusFound)
 }
 
-func (s *server) handlerListURLs(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlerListURLs(w http.ResponseWriter, r *http.Request) {
 	codes, err := s.store.List(r.Context())
 	if err != nil {
 		s.logger.Printf("failed to list URLs: %v\n", err)
@@ -103,7 +104,7 @@ func (s *server) handlerListURLs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(codes)
 }
 
-func (s *server) handlerStats(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handlerStats(w http.ResponseWriter, _ *http.Request) {
 	redirectsMu.Lock()
 	snapshot := redirects
 	redirectsMu.Unlock()

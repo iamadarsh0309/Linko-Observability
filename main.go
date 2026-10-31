@@ -3,41 +3,18 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"boot.dev/linko/internal/logging"
+	"boot.dev/linko/internal/server"
 	"boot.dev/linko/internal/store"
 )
 
-func requestLogger(logger *log.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-			logger.Printf("Served request: %s %s", r.Method, r.URL.Path)
-		})
-	}
-}
-
-func initializeLogger(logFile string) (*log.Logger, error) {
-	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open log file: %w", err)
-		}
-		multiwriter := io.MultiWriter(os.Stderr, file)
-		return log.New(multiwriter, "", log.LstdFlags), nil
-	}
-	return log.New(os.Stderr, "", log.LstdFlags), nil
-}
-
 func main() {
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	httpPort := flag.Int("port", 8899, "port to listen on")
@@ -50,7 +27,7 @@ func main() {
 }
 
 func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir string) int {
-	logger, err := initializeLogger(os.Getenv("LINKO_LOG_FILE"))
+	logger, err := logging.New(os.Getenv("LINKO_LOG_FILE"))
 	if err != nil {
 		log.Printf("failed to open access log: %v\n", err)
 		return 1
@@ -61,11 +38,12 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 		logger.Printf("failed to create store: %v\n", err)
 		return 1
 	}
-	s := newServer(*st, httpPort, cancel, logger)
+
+	s := server.New(st, httpPort, cancel, logger)
 
 	var serverErr error
 	go func() {
-		serverErr = s.start()
+		serverErr = s.Start()
 	}()
 
 	<-ctx.Done()
@@ -74,7 +52,7 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 
 	logger.Println("Linko is shutting down")
 
-	if err := s.shutdown(shutdownCtx); err != nil {
+	if err := s.Shutdown(shutdownCtx); err != nil {
 		logger.Printf("failed to shutdown server: %v\n", err)
 		return 1
 	}

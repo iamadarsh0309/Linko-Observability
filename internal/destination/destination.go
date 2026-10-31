@@ -1,4 +1,4 @@
-package main
+package destination
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func checkDestination(targetURL string) error {
+func Check(targetURL string) error {
 	resp, err := http.DefaultClient.Get(targetURL)
 	if err != nil {
 		return fmt.Errorf("destination unreachable: %w", err)

@@ -19,15 +19,18 @@
   Use a golangci-lint binary built with Go >= 1.27.
 - CI: `.github/workflows/ci.yml` runs formatting, vet, tests, build, and lint on
   pushes to `main` and pull requests.
-- `index.html` is embedded with `go:embed`; rebuild/restart after editing it.
+- `index.html` is embedded from `internal/server` with `go:embed`; rebuild/restart
+  after editing it.
 
 ## Layout and runtime quirks
 
-- Single `main` package at the root plus `internal/store`. Routes are wired in
-  `server.go:newServer`; add new handlers there.
+- Root `main.go` is the entrypoint. Application code lives under `internal/`:
+  `server` (HTTP routing, handlers, middleware), `auth` (Basic auth), `destination`
+  (outbound URL checks), `logging` (logger construction), and `store` (file storage).
+  Routes are wired in `internal/server.New`; add new handlers there.
 - Uses Go 1.22+ `ServeMux` method patterns. `GET /` is a catch-all for unmatched GET
   paths, and `GET /{shortCode}` handles redirects.
-- `requestLogger(logger)` wraps the mux in `server.go` and logs
+- `requestLogger(logger)` in `internal/server/middleware.go` wraps the mux and logs
   `Served request: METHOD PATH` for every request.
 - The store is file-per-short-code under `-data`. `Store.Lookup` uppercases codes;
   `Store.List` returns at most 10 entries.
@@ -38,9 +41,9 @@
   `ENV=production`).
 - Shorten and redirect requests perform a live outbound GET, so manual testing needs
   network access and a reachable destination URL.
-- Logging is configured in `main.go` by `initializeLogger`, which writes to stderr
-  and, when `LINKO_LOG_FILE` is set, also appends to that file via `io.MultiWriter`.
-  Loggers are injected into `newServer` and `store.New`.
+- Logging is configured in `internal/logging` by `New`, which writes to stderr and,
+  when `LINKO_LOG_FILE` is set, also appends to that file via `io.MultiWriter`.
+  Loggers are injected into `server.New` and `store.New`.
 - `fmt.Print*` is banned by `forbidigo` ("Use logger instead."). Keep existing log
   statements unless the task is specifically about changing telemetry.
 - `data/`, the `linko` binary, and `*.log` (e.g. `linko.out.log`) are gitignored.
