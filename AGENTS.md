@@ -2,11 +2,11 @@
 
 ## Repo context
 
-- Boot.dev "Linko" starter for the Logging & Telemetry course: a deliberately small,
-  messy Go URL shortener used to practice adding logs, metrics, and traces.
-- Do not "clean up" intentional inefficiencies unless asked: bcrypt hashing on every
-  redirect, an unbounded in-memory `redirects` slice, and live outbound HTTP checks
-  in `destination.go` are there for the exercises.
+- Open-source "Linko" URL shortener used as a realistic target for logging,
+  metrics, tracing, and other observability work.
+- Preserve deliberate rough edges unless asked: bcrypt hashing on every redirect,
+  an unbounded in-memory `redirects` slice, and live outbound HTTP checks in
+  `destination.go` create useful observability signals.
 
 ## Commands
 
