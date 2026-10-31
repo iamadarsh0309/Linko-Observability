@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -13,8 +15,6 @@ import (
 	"boot.dev/linko/internal/store"
 )
 
-var logger = log.New(os.Stderr, "DEBUG: ", log.LstdFlags)
-
 func requestLogger(logger *log.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -22,6 +22,18 @@ func requestLogger(logger *log.Logger) func(http.Handler) http.Handler {
 			logger.Printf("Served request: %s %s", r.Method, r.URL.Path)
 		})
 	}
+}
+
+func initializeLogger(logFile string) (*log.Logger, error) {
+	if logFile != "" {
+		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open log file: %w", err)
+		}
+		multiwriter := io.MultiWriter(os.Stderr, file)
+		return log.New(multiwriter, "", log.LstdFlags), nil
+	}
+	return log.New(os.Stderr, "", log.LstdFlags), nil
 }
 
 func main() {
@@ -38,21 +50,18 @@ func main() {
 }
 
 func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir string) int {
-	stdLogger := log.New(os.Stderr, "DEBUG: ", log.LstdFlags)
-	accesslog, err := os.OpenFile("linko.access.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
+	logger, err := initializeLogger(os.Getenv("LINKO_LOG_FILE"))
 	if err != nil {
-		stdLogger.Printf("failed to open access log: %v\n", err)
+		log.Printf("failed to open access log: %v\n", err)
 		return 1
 	}
 
-	accessLogger := log.New(accesslog, "INFO: ", log.LstdFlags)
-
-	st, err := store.New(dataDir, stdLogger)
+	st, err := store.New(dataDir, logger)
 	if err != nil {
-		stdLogger.Printf("failed to create store: %v\n", err)
+		logger.Printf("failed to create store: %v\n", err)
 		return 1
 	}
-	s := newServer(*st, httpPort, cancel, accessLogger)
+	s := newServer(*st, httpPort, cancel, logger)
 
 	var serverErr error
 	go func() {
@@ -63,14 +72,14 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	stdLogger.Println("Linko is shutting down")
+	logger.Println("Linko is shutting down")
 
 	if err := s.shutdown(shutdownCtx); err != nil {
-		stdLogger.Printf("failed to shutdown server: %v\n", err)
+		logger.Printf("failed to shutdown server: %v\n", err)
 		return 1
 	}
 	if serverErr != nil {
-		stdLogger.Printf("server error: %v\n", serverErr)
+		logger.Printf("server error: %v\n", serverErr)
 		return 1
 	}
 	return 0

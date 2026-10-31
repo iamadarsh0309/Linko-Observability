@@ -45,13 +45,6 @@ func newServer(store store.Store, port int, cancel context.CancelFunc, logger *l
 	return s
 }
 
-func logRequests(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Printf("Served request: %s %s", r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
-}
-
 func (s *server) start() error {
 	ln, err := net.Listen("tcp", s.httpServer.Addr)
 	if err != nil {

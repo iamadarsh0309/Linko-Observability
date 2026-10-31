@@ -25,7 +25,7 @@
   `server.go:newServer`; add new handlers there.
 - Uses Go 1.22+ `ServeMux` method patterns. `GET /` is a catch-all for unmatched GET
   paths, and `GET /{shortCode}` handles redirects.
-- `logRequests` wraps the mux in `server.go` and logs
+- `requestLogger(logger)` wraps the mux in `server.go` and logs
   `Served request: METHOD PATH` for every request.
 - The store is file-per-short-code under `-data`. `Store.Lookup` uppercases codes;
   `Store.List` returns at most 10 entries.
@@ -36,10 +36,9 @@
   `ENV=production`).
 - Shorten and redirect requests perform a live outbound GET, so manual testing needs
   network access and a reachable destination URL.
-- Root-package logging goes through the global `logger` in `main.go`
-  (`log.New(os.Stderr, "DEBUG: ", log.LstdFlags)`). Use `logger.*` in `main.go`,
-  `server.go`, `handlers.go`, and `auth.go`; don't call `log.*` directly there.
-  `internal/store` still uses the stdlib `log` package directly.
+- Logging is configured in `main.go` by `initializeLogger`, which writes to stderr
+  and, when `LINKO_LOG_FILE` is set, also appends to that file via `io.MultiWriter`.
+  Loggers are injected into `newServer` and `store.New`.
 - `fmt.Print*` is banned by `forbidigo` ("Use logger instead."). Keep existing log
   statements unless the task is specifically about changing telemetry.
 - `data/`, the `linko` binary, and `*.log` (e.g. `linko.out.log`) are gitignored.
