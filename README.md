@@ -51,6 +51,9 @@ To also write logs to a file:
 LINKO_LOG_FILE=linko.access.log ./linko
 ```
 
+File logging uses an 8 KiB buffered writer; the buffer is flushed when the
+process exits.
+
 ### Configuration
 
 | Flag / variable | Default | Purpose |

@@ -42,7 +42,8 @@
 - Shorten and redirect requests perform a live outbound GET, so manual testing needs
   network access and a reachable destination URL.
 - Logging is configured in `internal/logging` by `New`, which writes to stderr and,
-  when `LINKO_LOG_FILE` is set, also appends to that file via `io.MultiWriter`.
+  when `LINKO_LOG_FILE` is set, also appends to that file through an 8 KiB buffered
+  writer. The returned cleanup flushes and closes the file; call it before exit.
   Loggers are injected into `server.New` and `store.New`.
 - `fmt.Print*` is banned by `forbidigo` ("Use logger instead."). Keep existing log
   statements unless the task is specifically about changing telemetry.
