@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -20,7 +20,7 @@ var allowedUsers = map[string]string{
 	"saruman": "invalidFormat",
 }
 
-func Middleware(logger *log.Logger, next http.Handler) http.Handler {
+func Middleware(logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, ok := r.BasicAuth()
 		if !ok {
@@ -34,7 +34,7 @@ func Middleware(logger *log.Logger, next http.Handler) http.Handler {
 		}
 		ok, err := validatePassword(logger, password, stored)
 		if err != nil {
-			logger.Printf("error validating password for user: %s, error: %v\n", username, err)
+			logger.Info("error validating password for user: %s, error: %v\n", username, err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -52,13 +52,13 @@ func Username(ctx context.Context) (string, bool) {
 	return username, ok && username != ""
 }
 
-func validatePassword(logger *log.Logger, password, stored string) (bool, error) {
+func validatePassword(logger *slog.Logger, password, stored string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword([]byte(stored), []byte(password))
 	if err == bcrypt.ErrMismatchedHashAndPassword {
 		return false, nil
 	}
 	if err != nil {
-		logger.Printf("error validating password: %v\n", err)
+		logger.Info("error validating password: %v\n", err)
 		return false, err
 	}
 	return true, nil
