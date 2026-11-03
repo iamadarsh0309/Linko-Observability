@@ -58,7 +58,7 @@ func validatePassword(logger *slog.Logger, password, stored string) (bool, error
 		return false, nil
 	}
 	if err != nil {
-		logger.Info("error validating password: %v\n", err)
+		logger.Info("error validating password: %v\n", "error", err)
 		return false, err
 	}
 	return true, nil

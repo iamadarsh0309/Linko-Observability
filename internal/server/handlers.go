@@ -46,7 +46,7 @@ func (s *Server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing url parameter", http.StatusBadRequest)
 		return
 	}
-	s.logger.Info("Shortening URL:", longURL)
+	s.logger.Info("Shortening URL:", "url", longURL)
 	u, err := url.Parse(longURL)
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		http.Error(w, "invalid URL: must include scheme (http/https) and host", http.StatusBadRequest)
@@ -74,7 +74,7 @@ func (s *Server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, store.ErrNotFound) {
 			http.Error(w, "not found", http.StatusNotFound)
 		} else {
-			s.logger.Info("failed to lookup URL: %v\n", err)
+			s.logger.Info("failed to lookup URL: %v\n", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
@@ -95,7 +95,7 @@ func (s *Server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlerListURLs(w http.ResponseWriter, r *http.Request) {
 	codes, err := s.store.List(r.Context())
 	if err != nil {
-		s.logger.Info("failed to list URLs: %v\n", err)
+		s.logger.Info("failed to list URLs: %v\n", "error", err)
 		http.Error(w, "failed to list URLs", http.StatusInternalServerError)
 		return
 	}
