@@ -29,18 +29,18 @@ func main() {
 func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir string) int {
 	logger, closeLogger, err := logging.New(os.Getenv("LINKO_LOG_FILE"))
 	if err != nil {
-		slog.Info("failed to open access log: %v\n", "error", err)
+		slog.Error("failed to open access log: %v\n", "error", err)
 		return 1
 	}
 	defer func() {
 		if err := closeLogger(); err != nil {
-			slog.Info("failed to close logger: %v\n", "error", err)
+			slog.Error("failed to close logger: %v\n", "error", err)
 		}
 	}()
 
 	st, err := store.New(dataDir, logger)
 	if err != nil {
-		logger.Info("failed to create store: %v\n", "error", err)
+		logger.Error("failed to create store: %v\n", "error", err)
 		return 1
 	}
 
@@ -55,14 +55,14 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	logger.Info("Linko is shutting down")
+	logger.Debug("Linko is shutting down")
 
 	if err := s.Shutdown(shutdownCtx); err != nil {
-		logger.Info("failed to shutdown server: %v\n", "error", err)
+		logger.Error("failed to shutdown server: %v\n", "error", err)
 		return 1
 	}
 	if serverErr != nil {
-		logger.Info("server error: %v\n", "error", serverErr)
+		logger.Error("server error: %v\n", "error", serverErr)
 		return 1
 	}
 	return 0

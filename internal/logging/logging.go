@@ -14,7 +14,9 @@ import (
 func New(logFile string) (*slog.Logger, func() error, error) {
 
 	if logFile == "" {
-		return slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, nil
+		return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		})), nil, nil
 	}
 
 	file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
@@ -23,7 +25,9 @@ func New(logFile string) (*slog.Logger, func() error, error) {
 	}
 
 	bufferedFile := bufio.NewWriterSize(file, 8192)
-	logger := slog.New(slog.NewTextHandler(bufferedFile, nil))
+	stderrhandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})
+	filehandler := slog.NewTextHandler(bufferedFile, &slog.HandlerOptions{Level: slog.LevelInfo})
+	logger := slog.New(slog.NewMultiHandler(stderrhandler, filehandler))
 
 	cleanup := func() error {
 		if err := bufferedFile.Flush(); err != nil {
