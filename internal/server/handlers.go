@@ -46,13 +46,13 @@ func (s *Server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing url parameter", http.StatusBadRequest)
 		return
 	}
-	s.logger.Info("Shortening URL:", "url", longURL)
+	s.logger.Info("Shortening URL", "url", longURL)
 	u, err := url.Parse(longURL)
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		http.Error(w, "invalid URL: must include scheme (http/https) and host", http.StatusBadRequest)
 		return
 	}
-	s.logger.Info("Parsed URL: scheme=%s, host=%s\n", u.Scheme, u.Host)
+	s.logger.Info("Parsed URL", "scheme", u.Scheme, "host", u.Host)
 	if err := destination.Check(longURL); err != nil {
 		http.Error(w, fmt.Sprintf("invalid target URL: %v", err), http.StatusBadRequest)
 		return
@@ -62,7 +62,7 @@ func (s *Server) handlerShortenLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to shorten URL", http.StatusInternalServerError)
 		return
 	}
-	s.logger.Info("Generated short code: %s for URL: %s\n", shortCode, longURL)
+	s.logger.Info("Generated short code", "short_code", shortCode, "url", longURL)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
 	io.WriteString(w, shortCode)
@@ -74,7 +74,7 @@ func (s *Server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, store.ErrNotFound) {
 			http.Error(w, "not found", http.StatusNotFound)
 		} else {
-			s.logger.Error("failed to lookup URL: %v\n", "error", err)
+			s.logger.Error("failed to lookup URL", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 		}
 		return
@@ -95,7 +95,7 @@ func (s *Server) handlerRedirect(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handlerListURLs(w http.ResponseWriter, r *http.Request) {
 	codes, err := s.store.List(r.Context())
 	if err != nil {
-		s.logger.Error("failed to list URLs: %v\n", "error", err)
+		s.logger.Error("failed to list URLs", "error", err)
 		http.Error(w, "failed to list URLs", http.StatusInternalServerError)
 		return
 	}

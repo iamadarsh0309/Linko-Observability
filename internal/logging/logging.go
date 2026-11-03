@@ -26,7 +26,7 @@ func New(logFile string) (*slog.Logger, func() error, error) {
 
 	bufferedFile := bufio.NewWriterSize(file, 8192)
 	stderrhandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})
-	filehandler := slog.NewTextHandler(bufferedFile, &slog.HandlerOptions{Level: slog.LevelInfo})
+	filehandler := slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{Level: slog.LevelInfo})
 	logger := slog.New(slog.NewMultiHandler(stderrhandler, filehandler))
 
 	cleanup := func() error {
