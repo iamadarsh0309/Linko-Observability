@@ -25,8 +25,14 @@ func New(logFile string) (*slog.Logger, func() error, error) {
 	}
 
 	bufferedFile := bufio.NewWriterSize(file, 8192)
-	stderrhandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug})
-	filehandler := slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{Level: slog.LevelInfo})
+	stderrhandler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level:       slog.LevelDebug,
+		ReplaceAttr: replaceAttr,
+	})
+	filehandler := slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
+		Level:       slog.LevelInfo,
+		ReplaceAttr: replaceAttr,
+	})
 	logger := slog.New(slog.NewMultiHandler(stderrhandler, filehandler))
 
 	cleanup := func() error {
@@ -38,4 +44,15 @@ func New(logFile string) (*slog.Logger, func() error, error) {
 	}
 
 	return logger, cleanup, nil
+}
+
+func replaceAttr(groups []string, a slog.Attr) slog.Attr {
+	if a.Key == "error" {
+		err, ok := a.Value.Any().(error)
+		if !ok {
+			return a
+		}
+		return slog.String("error", fmt.Sprintf("%+v", err))
+	}
+	return a
 }

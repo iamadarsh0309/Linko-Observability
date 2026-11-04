@@ -20,7 +20,7 @@ type Server struct {
 	logger     *slog.Logger
 }
 
-func New(st *store.Store, port int, cancel context.CancelFunc, logger *slog.Logger) *Server {
+func New(st *store.Store, port int, cancel context.CancelFunc, logger *slog.Logger, validatePassword auth.PasswordValidator) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
@@ -34,10 +34,10 @@ func New(st *store.Store, port int, cancel context.CancelFunc, logger *slog.Logg
 	}
 
 	mux.HandleFunc("GET /", s.handlerIndex)
-	mux.Handle("POST /api/login", auth.Middleware(logger, http.HandlerFunc(s.handlerLogin)))
-	mux.Handle("POST /api/shorten", auth.Middleware(logger, http.HandlerFunc(s.handlerShortenLink)))
-	mux.Handle("GET /api/stats", auth.Middleware(logger, http.HandlerFunc(s.handlerStats)))
-	mux.Handle("GET /api/urls", auth.Middleware(logger, http.HandlerFunc(s.handlerListURLs)))
+	mux.Handle("POST /api/login", auth.Middleware(logger, validatePassword, http.HandlerFunc(s.handlerLogin)))
+	mux.Handle("POST /api/shorten", auth.Middleware(logger, validatePassword, http.HandlerFunc(s.handlerShortenLink)))
+	mux.Handle("GET /api/stats", auth.Middleware(logger, validatePassword, http.HandlerFunc(s.handlerStats)))
+	mux.Handle("GET /api/urls", auth.Middleware(logger, validatePassword, http.HandlerFunc(s.handlerListURLs)))
 	mux.HandleFunc("GET /{shortCode}", s.handlerRedirect)
 	mux.HandleFunc("POST /admin/shutdown", s.handlerShutdown)
 

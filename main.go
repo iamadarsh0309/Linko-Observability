@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"boot.dev/linko/internal/logging"
-	"boot.dev/linko/internal/server"
+	linkoserver "boot.dev/linko/internal/server"
 	"boot.dev/linko/internal/store"
 )
 
@@ -44,7 +44,7 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 		return 1
 	}
 
-	s := server.New(st, httpPort, cancel, logger)
+	s := linkoserver.New(st, httpPort, cancel, logger, (&server{}).validatePassword)
 
 	var serverErr error
 	go func() {
