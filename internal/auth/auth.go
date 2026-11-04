@@ -34,7 +34,7 @@ func Middleware(logger *slog.Logger, next http.Handler) http.Handler {
 		}
 		ok, err := validatePassword(logger, password, stored)
 		if err != nil {
-			logger.Error("error validating password", "username", username, "error", err)
+			logger.Error("error validating password", "user", username, "error", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -58,7 +58,7 @@ func validatePassword(logger *slog.Logger, password, stored string) (bool, error
 		return false, nil
 	}
 	if err != nil {
-		logger.Error("error validating password", "error", err)
+		// logger.Error("error validating password", "error", err)
 		return false, err
 	}
 	return true, nil
