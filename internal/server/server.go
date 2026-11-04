@@ -30,7 +30,7 @@ func New(st *store.Store, port int, cancel context.CancelFunc, logger *slog.Logg
 	}
 	s.httpServer = &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: requestLogger(logger)(mux),
+		Handler: RequestLogger(logger)(mux),
 	}
 
 	mux.HandleFunc("GET /", s.handlerIndex)
