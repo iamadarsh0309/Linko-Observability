@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"boot.dev/linko/internal/server"
+	linkoserver "boot.dev/linko/internal/server"
 )
 
 func Test_requestLogger(t *testing.T) {
@@ -23,7 +23,7 @@ func Test_requestLogger(t *testing.T) {
 		},
 	}))
 
-	requestLoggerMiddleware := server.RequestLogger(logger)
+	requestLoggerMiddleware := linkoserver.RequestLogger(logger)
 	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	loggedHandler := requestLoggerMiddleware(dummyHandler)
 
